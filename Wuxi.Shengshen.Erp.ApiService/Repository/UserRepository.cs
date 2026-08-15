@@ -19,6 +19,11 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
     /// <summary>
     /// 按账号查询单个用户（未逻辑删除）。
     /// </summary>
+    /// <remarks>
+    /// SqlKata 4.x 的 <c>Where(column, value)</c> 编译后会得到 <c>WHERE column = ?</c> + 单元素 bindings。
+    /// 由 <see cref="KingV.Core.Data.RepositoryBase{TEntity}.FirstOrDefaultAsync"/> 统一通过
+    /// <c>DynamicParameters</c> 把 Bindings 转给 Dapper，避免 Dapper 的"enumerable sequence not allowed"异常。
+    /// </remarks>
     public Task<User?> GetByAccountAsync(string account, CancellationToken cancellationToken = default) =>
         FirstOrDefaultAsync(q => q.Where("account", account), cancellationToken);
 

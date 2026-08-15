@@ -68,11 +68,18 @@ app.UseMiddleware<AuthMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.MapScalarApiReference();
+    // OpenAPI 文档 + Scalar UI 均设为匿名，避免根路径访问时被 JWT 拦截。
+    app.MapOpenApi().WithMetadata(new AllowAnonymousAttribute());
+    app.MapScalarApiReference().WithMetadata(new AllowAnonymousAttribute());
 }
 
 app.MapDefaultEndpoints();
+
+// 根路径重定向到 Scalar API 文档（先放行匿名）。
+app.MapGet("/", () => Results.Redirect("/scalar/v1", permanent: false))
+    .WithMetadata(new AllowAnonymousAttribute());
+app.MapGet("/scalar", () => Results.Redirect("/scalar/v1", permanent: false))
+    .WithMetadata(new AllowAnonymousAttribute());
 
 // 业务端点统一挂 /api 前缀（对齐 Java 契约）。
 var api = app.MapGroup("/api");
