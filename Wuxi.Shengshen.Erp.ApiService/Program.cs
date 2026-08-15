@@ -3,6 +3,7 @@ using KingV.Core.Data;
 using KingV.Core.Json;
 using KingV.Core.Middleware;
 using KingV.Core.Security;
+using KingV.Core.Web;
 using Medallion.Threading;
 using Medallion.Threading.Redis;
 using Scalar.AspNetCore;
@@ -60,7 +61,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 var app = builder.Build();
 
-// 业务异常统一走 KingV.Core 异常中间件转 ProblemDetails（RFC 7807）。
+// 业务异常统一走 KingV.Core 异常中间件转 ApiResponse 信封（对齐既有前端契约）。
 app.UseMiddleware<ExceptionMiddleware>();
 
 // JWT 鉴权：解析 token、Redis 单点会话、写 UserContext（业务模块的 LoginUserResolver 补全字段）。
@@ -81,8 +82,8 @@ app.MapGet("/", () => Results.Redirect("/scalar/v1", permanent: false))
 app.MapGet("/scalar", () => Results.Redirect("/scalar/v1", permanent: false))
     .WithMetadata(new AllowAnonymousAttribute());
 
-// 业务端点统一挂 /api 前缀（对齐 Java 契约）。
-var api = app.MapGroup("/api");
+// 业务端点统一挂 /api 前缀（对齐 Java 契约），并启用 ApiResponse 信封包装（对齐既有前端契约）。
+var api = app.MapGroup("/api").WithApiResponse();
 api.MapLoginEndpoint();
 
 app.Run();

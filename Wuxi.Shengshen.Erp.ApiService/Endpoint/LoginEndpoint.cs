@@ -15,7 +15,8 @@ namespace Wuxi.Shengshen.Erp.ApiService.Endpoint;
 /// <summary>
 /// 登录端点（对应 Java LoginController，全匿名可访问）。
 /// 验证码 + 账号密码 + JWT 签发（Redis 单点会话）。
-/// 响应采用 .NET 原生风格：成功 200 + 数据体，失败由 KingV.Core 异常中间件转 ProblemDetails。
+/// 响应由 KingV.Core.Web.ApiResponseEndpointFilter 自动包成 { status, message, data, requestId } 信封；
+/// 失败由 KingV.Core 异常中间件输出同构信封，前端契约与 Java 版完全一致。
 /// </summary>
 public static class LoginEndpoint
 {
@@ -112,10 +113,11 @@ public static class LoginEndpoint
             throw "密码错误".ParameterError();
         }
 
-        var token = await tokenService.IssueAsync(user.Id);
+        var (token, refreshToken) = await tokenService.IssuePairAsync(user.Id);
         return Results.Ok(new
         {
             token,
+            refreshToken,
             userId = user.Id,
             userName = user.Name,
             account = user.Account
