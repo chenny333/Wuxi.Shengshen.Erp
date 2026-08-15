@@ -1,7 +1,0 @@
-<Solution>
-  <Project Path="../../king-v.core/KingV.Core.csproj" />
-  <Project Path="Wuxi.Shengshen.Erp.ApiService/Wuxi.Shengshen.Erp.ApiService.csproj" />
-  <Project Path="Wuxi.Shengshen.Erp.AppHost/Wuxi.Shengshen.Erp.AppHost.csproj" />
-  <Project Path="Wuxi.Shengshen.Erp.ServiceDefaults/Wuxi.Shengshen.Erp.ServiceDefaults.csproj" />
-  <Project Path="Wuxi.Shengshen.Erp.Web/Wuxi.Shengshen.Erp.Web.csproj" />
-</Solution>
