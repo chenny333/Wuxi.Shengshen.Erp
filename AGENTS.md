@@ -20,6 +20,8 @@
 13. **映射工具**：实体 ↔ DTO 一律用 Facet 源生成器（DTO 标 `[Facet(typeof(实体), nameof(排除字段)..., ...)]` 并声明 `partial` **class**——**禁止用 record**：Facet 6.6.8 会把无主构造的 record 生成为 positional record，继承基类/手工声明的成员会让主构造参数 unread，所有值丢失且运行时不报错），编译期生成、零反射），**禁止手工逐字段 `new Dto { ... }` / 逐属性赋值**。实体 → 响应：排除字段 + `IFacetMapConfiguration` 处理取反（`Facet.Mapping` 命名空间），调用 `ToFacet`/`SelectFacets`。请求 → 实体：`GenerateToSource = true` + `IFacetToSourceConfiguration` 处理取反，Create 用生成的 `request.ToSource()`，Edit 用生成的 `request.ApplyToSource(entity)` 覆盖已加载实体（排除列表里的 Id/审计字段不受影响）。**DTO 上手工声明的字段**（挂 `[TableHeader]` / 校验特性时）必须同时标 `[MapFrom(nameof(实体.字段))]`（请求侧还要 `Reversible = true` 才进反向映射），否则与生成属性撞名（CS0102）。**禁用 Facet.Extensions 的 `ApplyFacet`**（运行时反射按名匹配，不走配置取反）。
 14. **错误消息常量**：throw 业务异常的消息一律取自 `Constants/{模块}/XxxErrorMessages.cs` 常量类（措辞与 Java 端一致），**禁止在 throw 处硬编码中文字符串**；同一模块多处共用的消息只定义一次。
 15. **分页语义**：`size = -1`（取全部）等 size 归一化由 `PageRequest.NormalizeSize` 在 `RepositoryBase.PageAsync` 入口统一处理，**禁止服务层/业务代码自行转换 size**。
+16. **唯一性校验**：字段防重复一律在实体类上标 `[UniqueConstraint(nameof(属性), ErrorMessage = XxxErrorMessages.常量)]`（KingV.Core.Data；单特性多属性名 = 联合唯一，多组约束重复标注），由 `RepositoryBase` 写入前自动查重，**禁止服务层/仓储手写查重 SQL**。错误消息必须来自模块常量类（同第 14 条）。
+17. **遍历风格**：循环遍历一律用 KingV.Core.Extensions 的集合扩展——顺序异步 `ForEachAsync`、并发异步 `LoopAsync`、同步遍历数组/List 用 `LoopSpan`（<1w 行）或 `LoopUnsafe`（>1w 行）；需提前退出/过滤的改用 LINQ（`Any`/`Select` 等）组合表达，**禁止裸写 `foreach`**。
 
 ## 1. 项目定位
 
