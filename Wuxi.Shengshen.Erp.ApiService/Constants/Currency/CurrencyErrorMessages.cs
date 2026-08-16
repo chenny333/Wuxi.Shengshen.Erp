@@ -7,4 +7,7 @@ public static class CurrencyErrorMessages
 {
     /// <summary>按 ID 未找到币种记录（编辑/切换启用/详情查询共用）。</summary>
     public const string NotFound = "币种管理不存在";
+
+    /// <summary>币种名称重复（新增/编辑时由 RepositoryBase 按 UniqueConstraint 自动查重抛出）。</summary>
+    public const string NameDuplicate = "币种名称已存在";
 }

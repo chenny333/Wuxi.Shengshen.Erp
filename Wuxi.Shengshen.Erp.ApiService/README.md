@@ -11,6 +11,9 @@ Domain/{模块}/Xxx.cs            实体，继承 KingV.Core.Data.DomainEntity�
                                 审计/禁用/逻辑删除/雪花ID 全在基类）；
                                 老库表缺 create_by/update_by/tenant_id，类上标
                                 [AuditIgnore(AuditFields.CreateBy | AuditFields.UpdateBy | AuditFields.TenantId)]
+                                防重字段在类上标 [UniqueConstraint(nameof(属性), ErrorMessage = XxxErrorMessages.常量)]
+                                （KingV.Core.Data；单特性多属性名 = 联合唯一，多组约束重复标注），
+                                由 RepositoryBase 写入前自动查重，禁止服务层/仓储手写查重 SQL
 Repository/Interfaces/          仓储接口（IXxxRepository）
 Repository/Impl/                仓储实现，继承 RepositoryBase<Xxx>，TableName 指定表名（snake_case）；
                                 查询用 Query() 链式构造（自动带 is_delete = 0）
