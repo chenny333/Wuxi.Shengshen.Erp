@@ -1,0 +1,14 @@
+# 统一行尾：仓库内归一化为 LF，Windows 签出按 core.autocrlf/core.eol 转 CRLF。
+# 本仓库会被 Linux 侧流水线（WSL/MiniMax worktree）与 Windows 侧 IDE 同时读写，必须显式声明，否则 git status 全是因行尾产生的假改动。
+* text=auto
+
+# 明确按二进制处理的类型，不做行尾转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
