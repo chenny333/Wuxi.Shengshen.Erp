@@ -1,0 +1,62 @@
+{
+  "allowedRepositories": [
+    "E:\\Kreakin\\Wuxi.Shengshen.Erp"
+  ],
+  "worktreeRoot": "E:\\Kreakin\\wuxi-erp-worktrees",
+  "requireCleanRepository": true,
+  "branchPrefix": "pipeline/",
+  "reviewMode": "external",
+  "blockingSeverities": [
+    "P0",
+    "P1"
+  ],
+  "junctions": [
+    {
+      "link": "worktrees/king-v.core",
+      "target": "E:\\Kreakin\\king-v.core"
+    }
+  ],
+  "developer": {
+    "command": "C:\\Windows\\System32\\wsl.exe",
+    "args": [
+      "-d",
+      "Ubuntu-24.04",
+      "--cd",
+      "{worktreePath}",
+      "--exec",
+      "env",
+      "GIT_CONFIG_COUNT=1",
+      "GIT_CONFIG_KEY_0=core.autocrlf",
+      "GIT_CONFIG_VALUE_0=true",
+      "OPENCODE_PERMISSION={\"*\":\"deny\",\"read\":\"allow\",\"edit\":\"allow\",\"glob\":\"allow\",\"grep\":\"allow\",\"lsp\":\"allow\",\"external_directory\":\"deny\",\"bash\":\"deny\",\"task\":\"deny\",\"question\":\"deny\",\"webfetch\":\"deny\",\"websearch\":\"deny\"}",
+      "OPENCODE_DISABLE_AUTOUPDATE=true",
+      "OPENCODE_DISABLE_DEFAULT_PLUGINS=true",
+      "OPENCODE_DISABLE_LSP_DOWNLOAD=true",
+      "/home/chenny/.opencode/bin/opencode",
+      "run",
+      "--auto",
+      "--format",
+      "default",
+      "--model",
+      "minimax-cn-coding-plan/MiniMax-M3",
+      "--file",
+      "{promptFileWsl}",
+      "--",
+      "严格执行附件中的开发任务说明。"
+    ],
+    "promptMode": "file",
+    "timeoutSeconds": 3600,
+    "env": {}
+  },
+  "verification": [
+    {
+      "name": "build",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "Wuxi.Shengshen.Erp.slnx"
+      ],
+      "timeoutSeconds": 1800
+    }
+  ]
+}

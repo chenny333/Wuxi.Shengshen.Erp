@@ -1,5 +1,5 @@
 using KingV.Core.Security;
-using Wuxi.Shengshen.Erp.ApiService.Repository;
+using Wuxi.Shengshen.Erp.ApiService.Repository.Interfaces;
 
 namespace Wuxi.Shengshen.Erp.ApiService.Security;
 
@@ -9,6 +9,7 @@ namespace Wuxi.Shengshen.Erp.ApiService.Security;
 /// </summary>
 public sealed class LoginUserResolver : ILoginUserResolver
 {
+    /// <summary>用户仓储。</summary>
     private readonly IUserRepository _userRepository;
 
     /// <summary>

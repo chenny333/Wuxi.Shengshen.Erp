@@ -1,6 +1,6 @@
 using Wuxi.Shengshen.Erp.ApiService.Domain.User;
 
-namespace Wuxi.Shengshen.Erp.ApiService.Repository;
+namespace Wuxi.Shengshen.Erp.ApiService.Repository.Interfaces;
 
 /// <summary>
 /// 用户仓储接口。

@@ -9,8 +9,11 @@ using Medallion.Threading.Redis;
 using Scalar.AspNetCore;
 using StackExchange.Redis;
 using Wuxi.Shengshen.Erp.ApiService.Endpoint;
-using Wuxi.Shengshen.Erp.ApiService.Repository;
+using Wuxi.Shengshen.Erp.ApiService.Repository.Impl;
+using Wuxi.Shengshen.Erp.ApiService.Repository.Interfaces;
 using Wuxi.Shengshen.Erp.ApiService.Security;
+using Wuxi.Shengshen.Erp.ApiService.Service.Impl;
+using Wuxi.Shengshen.Erp.ApiService.Service.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,6 +61,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddWuxiErpLoginUserResolver();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ICurrencyManagementRepository, CurrencyManagementRepository>();
+builder.Services.AddScoped<ICurrencyManagementService, CurrencyManagementService>();
 
 var app = builder.Build();
 
@@ -85,5 +90,6 @@ app.MapGet("/scalar", () => Results.Redirect("/scalar/v1", permanent: false))
 // 业务端点统一挂 /api 前缀（对齐 Java 契约），并启用 ApiResponse 信封包装（对齐既有前端契约）。
 var api = app.MapGroup("/api").WithApiResponse();
 api.MapLoginEndpoint();
+api.MapCurrencyManagementEndpoint();
 
 app.Run();

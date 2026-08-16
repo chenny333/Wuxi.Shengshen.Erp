@@ -1,7 +1,8 @@
 using KingV.Core.Data;
 using Wuxi.Shengshen.Erp.ApiService.Domain.User;
+using Wuxi.Shengshen.Erp.ApiService.Repository.Interfaces;
 
-namespace Wuxi.Shengshen.Erp.ApiService.Repository;
+namespace Wuxi.Shengshen.Erp.ApiService.Repository.Impl;
 
 /// <summary>
 /// 用户仓储（Dapper + SqlKata）。业务查询通过 <see cref="RepositoryBase{TEntity}.Query"/> 链式构造。

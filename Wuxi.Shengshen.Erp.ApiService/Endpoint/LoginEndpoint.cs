@@ -7,8 +7,9 @@ using Medallion.Threading;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
+using Wuxi.Shengshen.Erp.ApiService.Constants.Auth;
 using Wuxi.Shengshen.Erp.ApiService.Data.Requests.Login;
-using Wuxi.Shengshen.Erp.ApiService.Repository;
+using Wuxi.Shengshen.Erp.ApiService.Repository.Interfaces;
 
 namespace Wuxi.Shengshen.Erp.ApiService.Endpoint;
 
@@ -45,6 +46,7 @@ public static class LoginEndpoint
         return group;
     }
 
+    /// <summary>生成图形验证码：码值按 salt 存 Redis（限时），salt 走响应头回传，图片本体以 image/jpeg 输出。</summary>
     private static async Task<IResult> GetAuthCode(
         HttpContext context,
         IConnectionMultiplexer multiplexer,
@@ -73,6 +75,7 @@ public static class LoginEndpoint
         return Results.Empty;
     }
 
+    /// <summary>账号密码登录：防重锁 → 校验并删除验证码 → 校验用户与密码 → 签发 token/refreshToken。</summary>
     private static async Task<IResult> AccountLogin(
         [FromBody] LoginRequest request,
         [FromKeyedServices("redis")] IDistributedLockProvider distributedLockProvider,
@@ -88,7 +91,7 @@ public static class LoginEndpoint
         var @lock = distributedLockProvider.CreateLock(lockKey);
         await using var handle = await @lock.TryAcquireAsync(
             timeout: TimeSpan.FromSeconds(2),
-            cancellationToken: cancellationToken) ?? throw "登录请求过于频繁，请稍后重试".ParameterError();
+            cancellationToken: cancellationToken) ?? throw AuthErrorMessages.LoginTooFrequent.ParameterError();
 
         var db = multiplexer.GetDatabase();
         var captchaKey = AuthConstants.CaptchaKeyPrefix + request.Salt;
@@ -100,17 +103,17 @@ public static class LoginEndpoint
         if (expected.IsNullOrEmpty
             || !string.Equals(expected.ToString(), request.AuthCode, StringComparison.OrdinalIgnoreCase))
         {
-            throw "验证码错误或已过期".CaptchaError();
+            throw AuthErrorMessages.CaptchaInvalidOrExpired.CaptchaError();
         }
 
         var user = await userRepository.GetByAccountAsync(request.Account, cancellationToken);
-        if (user is null) throw "用户不存在".NotFound();
-        if (user.IsDelete) throw "用户不存在".NotFound();
-        if (user.IsDisable) throw "用户已封禁，请联系管理员".ParameterError();
+        if (user is null) throw AuthErrorMessages.UserNotFound.NotFound();
+        if (user.IsDelete) throw AuthErrorMessages.UserNotFound.NotFound();
+        if (user.IsDisable) throw AuthErrorMessages.UserDisabled.ParameterError();
 
         if (!PasswordUtil.Matches(user.Id, request.Password, user.Password))
         {
-            throw "密码错误".ParameterError();
+            throw AuthErrorMessages.PasswordWrong.ParameterError();
         }
 
         var (token, refreshToken) = await tokenService.IssuePairAsync(user.Id);
