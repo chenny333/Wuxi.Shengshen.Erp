@@ -9,7 +9,7 @@
 2. **纯 .NET 10 风格**：一切代码以 .NET 10 为基准（含 KingV.Core 已有代码持续按 .NET 10 风格调整）。禁止把 Java 习惯带进业务代码：不写 `ApiResult.ok()` 式包装、不定义 `ErrorCode` 枚举/固定码。
 3. **注释强制**：所有类、字段、属性、方法必须有 XML 文档注释（中文 `<summary>`；公共方法补 `<param>`/`<returns>`），**禁止 `<inheritdoc />`**（实现类成员也要写完整注释，源码内直接可读）。无注释的新代码不予合入；存量文件不强制立即回填，但**凡是扫到或改到的文件，发现缺注释的成员必须当场补上**。
 4. **线协议**：`/api` 下所有响应必须是 `{ status, message, data, requestId }` 信封（status 为字符串，成功恒 `"200"`）。信封由 `ApiResponseEndpointFilter`（/api 分组）与 `ExceptionMiddleware` 自动产出，**业务代码禁止手工构造信封**。
-5. **无数据成功响应**：禁止 `Results.Ok()`（无参版不实现 `IValueHttpResult`，信封过滤器会放行导致前端拿不到 body）。统一 `Results.Ok<object?>(null)`（参照 `CurrencyManagementEndpoint.EmptyOk()`）。
+5. **无数据成功响应**：直接 `Results.Ok()`（无参）即可——信封过滤器会把一切 2xx 结果包进信封，空结果输出 `{status:"200", message:"OK", data:null, requestId:"..."}`（对齐 Java：data 恒输出、requestId 为字符串，204 统一改写为 200）。禁止手工构造信封（同第 4 条）。
 6. **校验约定**：请求 DTO 的所有字符串字段必须 `[StringLength(n)]`（n 对齐 DB 列宽，Java actable VARCHAR 未写长度默认 255）；ErrorMessage 中数值一律用 `{0}` 占位符，禁止硬编码数字；列表查询的模糊搜索字段同样要加。
 7. **排序白名单**：前端回传的 `orderField` 必须经模块内白名单校验后才可拼入 ORDER BY，非法值回落默认排序。禁止直接拼接。
 8. **DTO 继承约定**：Edit 请求 = `CreateXxxRequest` + `IIdRequest`（基类槽位被 Create 请求占用，Id 只能用接口叠加；`[Required]` 标在实现类属性上，DataAnnotations 不读接口特性）；列表请求继承 `PageRequest`；响应侧基类槽位空闲，用抽象基类链 `IdResponse`（Id）→ `BaseResponse`（+审计字段，CreateTime 自带"创建时间"表头列，其余审计字段只回数据）→ `EnableResponse`（+Enable，自带"是否启用"表头列），镜像实体侧 `AuditableEntity → DomainEntity`——详情与列表行继承 `EnableResponse`、下拉项继承 `IdResponse`，**禁止在响应类里重复声明 Id/Enable/审计字段**。
@@ -53,7 +53,7 @@ KingV.Core/          核心组件框架（独立类库，FrameworkReference Micr
   Web/               ApiResponse 信封 + ApiResponseEndpointFilter、PageResult<T>/TableHeaderAttribute、
                      PageRequest、IIdRequest、ResponseBases.cs（响应基类链 IdResponse→BaseResponse→EnableResponse）
   Middleware/        ExceptionMiddleware（异常→信封）
-  Json/              JsonOptionsFactory（camelCase+忽略null+枚举按数值）
+  Json/              JsonOptionsFactory（camelCase+忽略null+枚举按数值+long按字符串读写，对齐 Java Long→String）
   Validation/        RequestValidator（DataAnnotations 手动触发）
   Exceptions/        BusinessException（message + HTTP status）
   Extensions/        BusinessException 扩展（.NotFound()/.ParameterError() 等）、LoopSpan 等
@@ -74,7 +74,8 @@ ApiService/          纯业务（详见 ApiService/README.md）
 
 ## 4. 关键实现约定（踩坑记录）
 
-- **线协议信封**：成功由 `/api` 分组的 `ApiResponseEndpointFilter` 自动包装 2xx 带值结果（文件流/验证码/重定向等非值 IResult 原样放行）；失败由 `ExceptionMiddleware` 输出同构信封——业务错误 HTTP 200（对齐 Java，前端判 `status != "200"` 弹 message），401/403 保留真实状态码，未知异常 HTTP 503 + `status:"5000"`。
+- **线协议信封**：成功由 `/api` 分组的 `ApiResponseEndpointFilter` 自动包装一切 2xx 结果——带值结果包 `data`，无参 `Results.Ok()` 等空结果统一 200、包 `data:null` 信封（对齐 Java：成功消息恒 `"OK"`、`data` 字段恒输出含 null、`requestId` 为字符串）；文件流/验证码/重定向等其余 IResult 原样放行；失败由 `ExceptionMiddleware` 输出同构信封——业务错误 HTTP 200（对齐 Java，前端判 `status != "200"` 弹 message），401/403 保留真实状态码，未知异常 HTTP 503 + `status:"5000"`。
+- **Long 线格式**：Java 端 JacksonConfig 全局 Long→String（雪花 ID 超 JS 安全整数），`JsonOptionsFactory` 已注册 long/long? 字符串转换器全局对齐——响应里所有 long（含实体 id）按字符串下发，请求侧字符串/数字两种写法都能反序列化。
 - **SqlKata 参数桥**：编译产物 `Bindings` 必须经 `RepositoryBase.ToDapperParameters` 转成命名 `DynamicParameters`（p0,p1,...），否则 Dapper 报 "enumerable sequence not allowed"。已封装在基类全部查询方法中，业务层正常写 `q.Where("account", account)`。
 - **Dapper 列映射**：Program.cs 已设 `Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true`；Insert/Update 列名由基类反射（`[Column]` 优先，否则 PascalCase→snake_case，按类型缓存）。
 - **验证码**：`KingV.Core.Helpers` 的 `CaptchaOptions.CreateVerifyImage(out code)`（需 `using KingV.Core.Helpers;`）；**校验即删**（修正 Java 可重放）。

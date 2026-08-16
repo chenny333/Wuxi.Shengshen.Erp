@@ -92,10 +92,10 @@ public static class CurrencyManagementEndpoint
     }
 
     /// <summary>
-    /// 无数据成功响应：必须用带值的 Ok&lt;object?&gt;（而非 Results.Ok()），
-    /// 后者不实现 IValueHttpResult，信封过滤器会原样放行导致前端拿不到 { status:"200" }。
+    /// 无数据成功响应：直接返回无参，
+    /// 信封过滤器会把 2xx 空结果包装为 { status:"200", message:"OK", data:null, requestId:"..." }（对齐 Java 端格式）。
     /// </summary>
-    private static IResult EmptyOk() => Results.Ok<object?>(null);
+    private static IResult EmptyOk() => Results.Ok();
 
     /// <summary>币种详情（GET getCurrencyManagement?id=）。</summary>
     private static async Task<IResult> Get(

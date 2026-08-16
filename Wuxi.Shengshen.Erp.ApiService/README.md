@@ -45,7 +45,7 @@ Constants/{模块}/               XxxErrorMessages 错误消息常量（throw �
 - 全部挂 `/api` 前缀（Program.cs 的 `api` 分组，已启用 ApiResponse 信封过滤器）。
 - 端点首行 `RequestValidator.Validate(request)`（Minimal API 不自动跑 DataAnnotations）。
 - 匿名端点 `.WithMetadata(new AllowAnonymousAttribute())`；业务端点默认要求登录，不做额外标记。
-- **无数据成功响应**统一 `Results.Ok<object?>(null)`（参照 `CurrencyManagementEndpoint.EmptyOk()`）；禁止 `Results.Ok()`——无参版不实现 `IValueHttpResult`，信封过滤器会放行，前端拿不到 `{status:"200"}`。
+- **无数据成功响应**统一 `Results.Ok()`（参照 `CurrencyManagementEndpoint.EmptyOk()`）；信封过滤器会把 2xx 空结果包装为 `{status:"200", message:"OK", data:null, requestId:"..."}`（对齐 Java 端格式），禁止手工构造信封。
 - 查询参数用 `[FromQuery]`，body 用 `[FromBody]`；路由名、参数名与 Java 端一致（前端零改动）。
 
 ### 仓储规范
