@@ -17,6 +17,12 @@ Domain/{模块}/Xxx.cs            实体，继承 KingV.Core.Data.DomainEntity�
                                 需要缓存的实体类上标 [RedisCacheable(时长, RedisExpireType.Day/Month/Year)]
                                 （标注即启用，月=30 天/年=365 天近似），由 RepositoryBase 自动接管缓存读写
                                 （单条 cache-aside、列表 id 反查水合、写池/删池、Redis 故障降级查库），禁止业务层手写 Redis 缓存
+Domain/{模块}/XxxEnum.cs        枚举：Java 侧用了枚举的字段必须迁成 .NET 枚举（值严格对齐 @EnumValue，
+                                成员标 [Description("中文")] 供表头 EnumMap 读取，DB 存数值 / JSON 按数值），
+                                禁止 int 裸值 + 注释描述、禁止揣测新增 Java 没有的成员；
+                                位标志/状态组合类按 1|2|4|8 定义（参照 Domain/User/Sex.cs）
+Configuration/                  业务可调参数 Options 类（如 UserOptions.DefaultPassword——Java 端硬编码的
+                                可调默认值一律改为 appsettings 可配，禁止硬编码常量）
 Repository/Interfaces/          仓储接口（IXxxRepository）
 Repository/Impl/                仓储实现，继承 RepositoryBase<Xxx>，TableName 指定表名（snake_case）；
                                 查询用 Query() 链式构造（自动带 is_delete = 0）

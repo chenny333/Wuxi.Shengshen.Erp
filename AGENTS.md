@@ -23,6 +23,8 @@
 16. **唯一性校验**：字段防重复一律在实体类上标 `[UniqueConstraint(nameof(属性), ErrorMessage = XxxErrorMessages.常量)]`（KingV.Core.Data；单特性多属性名 = 联合唯一，多组约束重复标注），由 `RepositoryBase` 写入前自动查重，**禁止服务层/仓储手写查重 SQL**。错误消息必须来自模块常量类（同第 14 条）。
 17. **遍历风格**：循环遍历一律用 KingV.Core.Extensions 的集合扩展——顺序异步 `ForEachAsync`、并发异步 `LoopAsync`、同步遍历数组/List 用 `LoopSpan`（<1w 行）或 `LoopUnsafe`（>1w 行）；需提前退出/过滤的改用 LINQ（`Any`/`Select` 等）组合表达，**禁止裸写 `foreach`**。
 18. **实体缓存**：需要缓存的实体在类上标 `[RedisCacheable(时长, RedisExpireType.Day/Month/Year)]`（KingV.Core.Data；月=30 天、年=365 天近似），由 `RepositoryBase` 自动接管读写（单条 cache-aside、列表 id 反查水合、写池/删池、Redis 故障降级查库），**禁止业务层手写 Redis 缓存读写**。
+19. **枚举约定**：Java 端用了枚举的字段，.NET 侧必须在 `Domain/{模块}/` 下定义对应枚举，**枚举值严格对齐 Java `@EnumValue`**，**禁止揣测新增 Java 没有的成员**（反例：User 性别曾被臆造出"0 未知"，Java `Sex` 枚举只有 MAN(1)/WOMAN(2)）；枚举成员必须标 `[Description("中文")]`（表头 `EnumMap` 由 TableHeaderBuilder 自动读取）；DB 存数值、JSON 按数值读写（对齐 Java `@JsonValue`）。位标志/状态组合类枚举按 1|2|4|8 定义。**禁止用 int 裸值 + 注释描述代替枚举**。
+20. **可调默认值配置化**：可能改动的默认值/开关一律走 Options 模式（`Configuration/XxxOptions.cs` 定义 + appsettings 对应节 + Program.cs `Configure<XxxOptions>` 注册 + 构造注入 `IOptions<XxxOptions>`），**禁止硬编码 const**（反例：`UserService.DefaultPassword = "qwer1234"` 已改为 `UserOptions.DefaultPassword`）。
 
 ## 1. 项目定位
 
@@ -93,7 +95,7 @@ ApiService/          纯业务（详见 ApiService/README.md）
 
 - 连接串：`ConnectionStrings:Redis` / `ConnectionStrings:MySql`，AppHost 与 ApiService **各自需要**（AppHost 注入给 ApiService 前自己也要能解析，否则 Dashboard 里 apiservice URL 为 0）。
 - user-secrets ID：AppHost = `wuxi-erp-apphost-secrets`；ApiService = `wuxi-erp-apiservice-secrets`。
-- 业务配置：`CaptchaOptions` / `Security`（Secret/Header/Prefix/ExpireHours/RefreshExpireHours/SingleSession）。
+- 业务配置：`CaptchaOptions` / `Security`（Secret/Header/Prefix/ExpireHours/RefreshExpireHours/SingleSession）/ `User`（DefaultPassword 等用户模块可调参数，见 `Configuration/UserOptions.cs`）。
 
 ## 6. 协作偏好（继承自用户）
 

@@ -167,5 +167,8 @@ PDA：Login、User、Stock、WarehouseIn、WarehouseInNotice、WarehouseOut、Wa
 2. 按 AGENTS.md 硬性规定与币别 CurrencyManagement 模板落四层（Domain/Repository/Service/Endpoint）；
 3. 字典/主数据类实体标 [RedisCacheable(30, RedisExpireType.Day)]；防重字段标 [UniqueConstraint]；
 4. 老库表审计列缺失标 [AuditIgnore]；请求 DTO 标 [Facet] 反向映射，响应 DTO partial class + Facet；
-5. dotnet build 0 警告 0 错误。
+5. Java 侧用了枚举的字段必须迁成 .NET 枚举（Domain/{模块}/ 下，值严格对齐 @EnumValue，
+   成员标 [Description]，DB 存数值 / JSON 按数值），禁止 int 裸值、禁止揣测新增 Java 没有的枚举成员；
+   可能改动的默认值（如默认密码）走 Options 配置（Configuration/ + appsettings 节），禁止硬编码常量；
+6. dotnet build 0 警告 0 错误。
 ```
