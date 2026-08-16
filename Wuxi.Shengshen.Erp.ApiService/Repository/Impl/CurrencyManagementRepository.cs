@@ -1,4 +1,6 @@
 using KingV.Core.Data;
+using Microsoft.Extensions.Logging;
+using StackExchange.Redis;
 using Wuxi.Shengshen.Erp.ApiService.Domain.Currency;
 using Wuxi.Shengshen.Erp.ApiService.Repository.Interfaces;
 
@@ -17,9 +19,15 @@ public sealed class CurrencyManagementRepository : RepositoryBase<CurrencyManage
     };
 
     /// <summary>
-    /// 注入连接工厂。
+    /// 注入连接工厂、Redis 连接与日志工厂。
     /// </summary>
-    public CurrencyManagementRepository(MySqlConnectionFactory factory) : base(factory) { }
+    /// <param name="factory">MySQL 连接工厂。</param>
+    /// <param name="redis">Redis 连接复用器（实体缓存池）。</param>
+    /// <param name="loggerFactory">日志工厂。</param>
+    public CurrencyManagementRepository(
+        MySqlConnectionFactory factory,
+        IConnectionMultiplexer redis,
+        ILoggerFactory loggerFactory) : base(factory, redis, loggerFactory) { }
 
     /// <summary>表名固定为 currency_management。</summary>
     protected override string TableName => "currency_management";
@@ -52,9 +60,10 @@ public sealed class CurrencyManagementRepository : RepositoryBase<CurrencyManage
         }, current, size, cancellationToken);
     }
 
-    /// <summary>查询下拉列表数据（未删除记录按 create_time 倒序全量返回）。</summary>
+    /// <summary>查询下拉列表数据（仅启用中且未删除的记录，按 create_time 倒序全量返回）。</summary>
+    /// <remarks>下拉场景只应出现可选项，禁用记录不下发（与 Java 端行为不同——Java 未过滤 is_disable，属刻意对齐前端预期）。</remarks>
     /// <param name="cancellationToken">取消令牌。</param>
     /// <returns>币种实体列表。</returns>
     public Task<List<CurrencyManagement>> GetDownListAsync(CancellationToken cancellationToken = default) =>
-        FindAsync(q => q.OrderByDesc("create_time"), cancellationToken);
+        FindAsync(q => q.WhereFalse("is_disable").OrderByDesc("create_time"), cancellationToken);
 }

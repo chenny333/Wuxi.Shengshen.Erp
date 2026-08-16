@@ -13,12 +13,15 @@ Domain/{模块}/Xxx.cs            实体，继承 KingV.Core.Data.DomainEntity�
                                 [AuditIgnore(AuditFields.CreateBy | AuditFields.UpdateBy | AuditFields.TenantId)]
                                 防重字段在类上标 [UniqueConstraint(nameof(属性), ErrorMessage = XxxErrorMessages.常量)]
                                 （KingV.Core.Data；单特性多属性名 = 联合唯一，多组约束重复标注），
-                                由 RepositoryBase 写入前自动查重，禁止服务层/仓储手写查重 SQL
+                                由 RepositoryBase 写入前自动查重，禁止服务层/仓储手写查重 SQL；
+                                需要缓存的实体类上标 [RedisCacheable(时长, RedisExpireType.Day/Month/Year)]
+                                （标注即启用，月=30 天/年=365 天近似），由 RepositoryBase 自动接管缓存读写
+                                （单条 cache-aside、列表 id 反查水合、写池/删池、Redis 故障降级查库），禁止业务层手写 Redis 缓存
 Repository/Interfaces/          仓储接口（IXxxRepository）
 Repository/Impl/                仓储实现，继承 RepositoryBase<Xxx>，TableName 指定表名（snake_case）；
                                 查询用 Query() 链式构造（自动带 is_delete = 0）
 Service/Interfaces/             服务接口（IXxxService）
-Service/Impl/                   服务实现：存在性检查（throw XxxErrorMessages.NotFound.NotFound()）、
+Service/Impl/                   服务实现：存在性检查（编辑/删除/详情等按 id 操作先 GetByIdAsync，null 抛 XxxErrorMessages.NotFound.NotFound()）、
                                 enable ↔ is_disable 取反等规则；实体 → 响应映射走 Facet（ToFacet/SelectFacets）
 Endpoint/XxxEndpoint.cs         静态类 + MapXxxEndpoint(this RouteGroupBuilder)，
                                 路由/HTTP 方法与 Java controller 完全一致

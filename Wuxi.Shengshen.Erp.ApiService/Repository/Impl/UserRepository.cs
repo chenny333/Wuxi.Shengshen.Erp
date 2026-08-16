@@ -1,4 +1,6 @@
 using KingV.Core.Data;
+using Microsoft.Extensions.Logging;
+using StackExchange.Redis;
 using Wuxi.Shengshen.Erp.ApiService.Domain.User;
 using Wuxi.Shengshen.Erp.ApiService.Repository.Interfaces;
 
@@ -10,9 +12,15 @@ namespace Wuxi.Shengshen.Erp.ApiService.Repository.Impl;
 public sealed class UserRepository : RepositoryBase<User>, IUserRepository
 {
     /// <summary>
-    /// 注入连接工厂。
+    /// 注入连接工厂、Redis 连接与日志工厂。
     /// </summary>
-    public UserRepository(MySqlConnectionFactory factory) : base(factory) { }
+    /// <param name="factory">MySQL 连接工厂。</param>
+    /// <param name="redis">Redis 连接复用器（实体缓存池）。</param>
+    /// <param name="loggerFactory">日志工厂。</param>
+    public UserRepository(
+        MySqlConnectionFactory factory,
+        IConnectionMultiplexer redis,
+        ILoggerFactory loggerFactory) : base(factory, redis, loggerFactory) { }
 
     /// <summary>表名固定为 user。</summary>
     protected override string TableName => "user";

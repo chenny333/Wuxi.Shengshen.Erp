@@ -22,6 +22,7 @@
 15. **分页语义**：`size = -1`（取全部）等 size 归一化由 `PageRequest.NormalizeSize` 在 `RepositoryBase.PageAsync` 入口统一处理，**禁止服务层/业务代码自行转换 size**。
 16. **唯一性校验**：字段防重复一律在实体类上标 `[UniqueConstraint(nameof(属性), ErrorMessage = XxxErrorMessages.常量)]`（KingV.Core.Data；单特性多属性名 = 联合唯一，多组约束重复标注），由 `RepositoryBase` 写入前自动查重，**禁止服务层/仓储手写查重 SQL**。错误消息必须来自模块常量类（同第 14 条）。
 17. **遍历风格**：循环遍历一律用 KingV.Core.Extensions 的集合扩展——顺序异步 `ForEachAsync`、并发异步 `LoopAsync`、同步遍历数组/List 用 `LoopSpan`（<1w 行）或 `LoopUnsafe`（>1w 行）；需提前退出/过滤的改用 LINQ（`Any`/`Select` 等）组合表达，**禁止裸写 `foreach`**。
+18. **实体缓存**：需要缓存的实体在类上标 `[RedisCacheable(时长, RedisExpireType.Day/Month/Year)]`（KingV.Core.Data；月=30 天、年=365 天近似），由 `RepositoryBase` 自动接管读写（单条 cache-aside、列表 id 反查水合、写池/删池、Redis 故障降级查库），**禁止业务层手写 Redis 缓存读写**。
 
 ## 1. 项目定位
 
@@ -46,8 +47,9 @@
 ```
 KingV.Core/          核心组件框架（独立类库，FrameworkReference Microsoft.AspNetCore.App）
   Data/              EntityBase/AuditableEntity/DomainEntity、AuditIgnoreAttribute（老库表缺失审计列声明）、
+                     UniqueConstraintAttribute（唯一性约束声明）、RedisCacheableAttribute+RedisExpireType（实体缓存声明）、
                      MySqlConnectionFactory、SqlKataFactory(MySqlCompiler 单例)、
-                     RepositoryBase<T>（CRUD+分页+审计填充+逻辑删除）
+                     RepositoryBase<T>（CRUD+分页+审计填充+逻辑删除+唯一性查重+Redis 实体缓存）
   Security/          TokenService(JWT+Redis单点+refreshToken)、AuthMiddleware、ILoginUserResolver、
                      LoginUser/UserContext、PasswordUtil(BCrypt)、AllowAnonymousAttribute、AuthConstants、SecurityOptions
   Web/               ApiResponse 信封 + ApiResponseEndpointFilter、PageResult<T>/TableHeaderAttribute、

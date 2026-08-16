@@ -39,11 +39,15 @@ public sealed class CurrencyManagementService : ICurrencyManagementService
         await _repository.UpdateAsync(entity, cancellationToken);
     }
 
-    /// <summary>逻辑删除币种（is_delete = 1）。</summary>
+    /// <summary>逻辑删除币种（is_delete = 1）；记录不存在抛"币种管理不存在"。</summary>
     /// <param name="id">币种 ID。</param>
     /// <param name="cancellationToken">取消令牌。</param>
-    public Task RemoveAsync(long id, CancellationToken cancellationToken = default) =>
-        _repository.LogicDeleteAsync(id, cancellationToken);
+    public async Task RemoveAsync(long id, CancellationToken cancellationToken = default)
+    {
+        _ = await _repository.GetByIdAsync(id, cancellationToken)
+            ?? throw CurrencyErrorMessages.NotFound.NotFound();
+        await _repository.LogicDeleteAsync(id, cancellationToken);
+    }
 
     /// <summary>切换启用状态（is_disable 取反）；记录不存在抛"币种管理不存在"。</summary>
     /// <param name="id">币种 ID。</param>
@@ -85,7 +89,7 @@ public sealed class CurrencyManagementService : ICurrencyManagementService
         return PageResult<CurrencyManagementListItemResponse>.Of(list, total);
     }
 
-    /// <summary>查询币种下拉列表（create_time 倒序全量）。</summary>
+    /// <summary>查询币种下拉列表（仅启用中记录，create_time 倒序全量；禁用记录不下发）。</summary>
     /// <param name="cancellationToken">取消令牌。</param>
     /// <returns>下拉项列表（Id/名称/备注）。</returns>
     public async Task<List<CurrencyManagementDownListItemResponse>> GetDownListAsync(
